@@ -6,7 +6,7 @@
 
   <title>予約カレンダー</title>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.5/css/bulma.min.css">
+  <link rel="stylesheet" href="bulma.min.css">
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 
   <style>
@@ -22,8 +22,34 @@
 
     .modal { z-index: 9999; }
 
+    .modal-card {
+      max-width: 95vw;
+      width: min(95vw, 900px);
+      max-height: 90vh;
+      height: auto;
+    }
+
+    .modal-card-body .field-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .modal-card-body .field-row .field {
+      flex: 1 1 180px;
+      min-width: 180px;
+    }
+
     @media (max-width:768px){
       .fc-toolbar-title { font-size:1rem; }
+      .modal-card .select select,
+      .modal-card .input,
+      .modal-card .textarea {
+        font-size: 16px;
+      }
+      .modal-card-body .field-row .field {
+        min-width: 100%;
+      }
     }
   </style>
 </head>
