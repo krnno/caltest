@@ -6,16 +6,11 @@
 
   <title>予約カレンダー</title>
 
-  <!-- Bulma -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.5/css/bulma.min.css">
-
-  <!-- FullCalendar -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 
   <style>
-    body {
-      background: #f5f5f5;
-    }
+    body { background: #f5f5f5; }
 
     #calendar {
       background: #fff;
@@ -23,15 +18,12 @@
       border-radius: 6px;
     }
 
-    #loading {
-      display: none;
-      margin-bottom: 10px;
-    }
+    #loading { display:none; margin-bottom:10px; }
 
-    @media (max-width: 768px) {
-      .fc-toolbar-title {
-        font-size: 1rem;
-      }
+    .modal { z-index: 9999; }
+
+    @media (max-width:768px){
+      .fc-toolbar-title { font-size:1rem; }
     }
   </style>
 </head>
@@ -52,10 +44,7 @@
   </div>
 </section>
 
-<!-- FullCalendar -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-
-<!-- アプリ -->
 <script src="app.js"></script>
 
 </body>
