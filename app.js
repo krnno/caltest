@@ -21,18 +21,14 @@ function init() {
     height: 'auto',
     nowIndicator: true,
 
-    validRange: {
-      start: today()
-    },
+    validRange: { start: today() },
 
     loading: isLoading => {
       loadingEl.style.display = isLoading ? 'block' : 'none';
     },
 
     events: fetchEvents,
-
     eventClick: handleEventClick
-
   });
 
   calendar.render();
@@ -48,10 +44,7 @@ function fetchEvents(info, success, failure) {
     .then(res => res.json())
     .then(data => {
 
-      if (!data.ok) {
-        failure(data.error);
-        return;
-      }
+      if (!data.ok) return failure(data.error);
 
       success(data.events.map(ev => ({
         title: '空き',
@@ -65,6 +58,7 @@ function fetchEvents(info, success, failure) {
 
 // ===== クリック =====
 function handleEventClick(info) {
+
   openBookingModal(
     new Date(info.event.start).toISOString().slice(0,10),
     new Date(info.event.start),
@@ -74,6 +68,9 @@ function handleEventClick(info) {
 
 // ===== モーダル =====
 function openBookingModal(date, openStart, openEnd) {
+
+  // 既存削除
+  document.querySelectorAll('.modal').forEach(m => m.remove());
 
   const modal = document.createElement('div');
   modal.className = 'modal is-active';
@@ -135,7 +132,7 @@ function openBookingModal(date, openStart, openEnd) {
     </div>
   `;
 
-  document.getElementById('modal-root').appendChild(modal);
+  document.body.appendChild(modal);
 
   buildStartOptions(modal, openStart, openEnd);
   updateDuration(modal, 'CALL');
@@ -143,6 +140,7 @@ function openBookingModal(date, openStart, openEnd) {
   modal.querySelectorAll('input[name="type"]').forEach(r => {
     r.onchange = () => {
       const type = r.value;
+
       updateDuration(modal, type);
 
       modal.querySelector('#meetingField').style.display =
@@ -166,7 +164,7 @@ function openBookingModal(date, openStart, openEnd) {
       purpose: modal.querySelector('#purpose').value
     };
 
-    console.log(data); // GAS POSTに置き換え
+    console.log(data);
 
     modal.remove();
     alert('送信しました');
