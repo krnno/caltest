@@ -1,9 +1,7 @@
-// ===== 設定 =====
 const CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbwDmbS1gNoPLNwKH4oaTVgblGDhArpXY45yeToAJJ5-7eLXeryYhhx7vPdpCR1Xlp7W/exec"
 };
 
-// ===== 初期化 =====
 document.addEventListener('DOMContentLoaded', init);
 
 function init() {
@@ -27,7 +25,7 @@ function init() {
       start: today()
     },
 
-    loading: function(isLoading) {
+    loading: isLoading => {
       loadingEl.style.display = isLoading ? 'block' : 'none';
     },
 
@@ -40,13 +38,13 @@ function init() {
   calendar.render();
 }
 
-// ===== イベント取得 =====
+// ===== API =====
 function fetchEvents(info, success, failure) {
 
   const start = info.startStr.slice(0,10);
   const end   = info.endStr.slice(0,10);
 
-  fetch(`${CONFIG.API_URL}?start=${start}&end=${end}&t=${Date.now()}`)
+  fetch(`${CONFIG.API_URL}?start=${start}&end=${end}`)
     .then(res => res.json())
     .then(data => {
 
@@ -55,30 +53,26 @@ function fetchEvents(info, success, failure) {
         return;
       }
 
-      const events = data.events.map(ev => ({
+      success(data.events.map(ev => ({
         title: '空き',
         start: ev.start,
         end: ev.end,
         color: '#48c774'
-      }));
-
-      success(events);
+      })));
     })
     .catch(failure);
 }
 
-// ===== クリック処理 =====
+// ===== クリック =====
 function handleEventClick(info) {
-
-  const start = new Date(info.event.start);
-  const end   = new Date(info.event.end);
-
-  const date = start.toISOString().slice(0,10);
-
-  openBookingModal(date, start, end);
+  openBookingModal(
+    new Date(info.event.start).toISOString().slice(0,10),
+    new Date(info.event.start),
+    new Date(info.event.end)
+  );
 }
 
-// ===== モーダル生成 =====
+// ===== モーダル =====
 function openBookingModal(date, openStart, openEnd) {
 
   const modal = document.createElement('div');
@@ -86,6 +80,7 @@ function openBookingModal(date, openStart, openEnd) {
 
   modal.innerHTML = `
     <div class="modal-background"></div>
+
     <div class="modal-card">
 
       <header class="modal-card-head">
@@ -101,6 +96,12 @@ function openBookingModal(date, openStart, openEnd) {
         </div>
 
         <div class="field">
+          <label class="label">利用形式</label>
+          <label class="radio"><input type="radio" name="type" value="CALL" checked> 通話</label>
+          <label class="radio"><input type="radio" name="type" value="MEET"> 対面</label>
+        </div>
+
+        <div class="field">
           <label class="label">開始時間</label>
           <div class="select is-fullwidth">
             <select id="startTime"></select>
@@ -110,23 +111,18 @@ function openBookingModal(date, openStart, openEnd) {
         <div class="field">
           <label class="label">利用時間</label>
           <div class="select is-fullwidth">
-            <select id="duration">
-              <option value="10">10分</option>
-              <option value="20">20分</option>
-              <option value="30">30分</option>
-              <option value="60">60分</option>
-            </select>
+            <select id="duration"></select>
           </div>
         </div>
 
-        <div class="field">
-          <label class="label">名前</label>
-          <input id="name" class="input">
+        <div id="meetingField" class="field" style="display:none;">
+          <label class="label">待ち合わせ場所</label>
+          <input id="meeting" class="input">
         </div>
 
         <div class="field">
-          <label class="label">メール</label>
-          <input id="email" class="input">
+          <label class="label">レンタル目的</label>
+          <textarea id="purpose" class="textarea"></textarea>
         </div>
 
       </section>
@@ -139,63 +135,88 @@ function openBookingModal(date, openStart, openEnd) {
     </div>
   `;
 
-  document.body.appendChild(modal);
+  document.getElementById('modal-root').appendChild(modal);
 
-  // ===== 時間候補生成 =====
-  const select = modal.querySelector('#startTime');
+  buildStartOptions(modal, openStart, openEnd);
+  updateDuration(modal, 'CALL');
 
-  let t = new Date(openStart);
+  modal.querySelectorAll('input[name="type"]').forEach(r => {
+    r.onchange = () => {
+      const type = r.value;
+      updateDuration(modal, type);
 
-  while (t < openEnd) {
-    const opt = document.createElement('option');
-    opt.value = formatTime(t);
-    opt.textContent = formatTime(t);
-    select.appendChild(opt);
+      modal.querySelector('#meetingField').style.display =
+        (type === 'MEET') ? '' : 'none';
+    };
+  });
 
-    t = new Date(t.getTime() + 10 * 60000);
-  }
-
-  // ===== 閉じる =====
   modal.querySelector('.delete').onclick =
   modal.querySelector('.cancel').onclick =
-  modal.querySelector('.modal-background').onclick = () => modal.remove();
+  modal.querySelector('.modal-background').onclick =
+    () => modal.remove();
 
-  // ===== 送信 =====
-  modal.querySelector('#submitBtn').onclick = async () => {
+  modal.querySelector('#submitBtn').onclick = () => {
 
     const data = {
       date,
+      type: modal.querySelector('input[name="type"]:checked').value,
       start: modal.querySelector('#startTime').value,
       duration: modal.querySelector('#duration').value,
-      name: modal.querySelector('#name').value,
-      email: modal.querySelector('#email').value
+      meeting: modal.querySelector('#meeting').value,
+      purpose: modal.querySelector('#purpose').value
     };
 
-    await submitBooking(data);
+    console.log(data); // GAS POSTに置き換え
 
     modal.remove();
     alert('送信しました');
   };
 }
 
-// ===== 送信 =====
-async function submitBooking(data) {
+// ===== helpers =====
+function buildStartOptions(modal, start, end) {
 
-  await fetch(CONFIG.API_URL, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
+  const select = modal.querySelector('#startTime');
+
+  let t = new Date(start);
+
+  while (t < end) {
+    addOption(select, formatTime(t), formatTime(t));
+    t = new Date(t.getTime() + 10 * 60000);
+  }
 }
 
-// ===== ユーティリティ =====
+function updateDuration(modal, type) {
+
+  const select = modal.querySelector('#duration');
+  select.innerHTML = '';
+
+  if (type === 'CALL') {
+    for (let i = 10; i <= 120; i += 10) {
+      addOption(select, `${i}分`, i);
+    }
+  } else {
+    for (let i = 60; i <= 240; i += 60) {
+      addOption(select, `${i}分`, i);
+    }
+  }
+}
+
+function addOption(select, label, value) {
+  const opt = document.createElement('option');
+  opt.value = value;
+  opt.textContent = label;
+  select.appendChild(opt);
+}
+
+function formatTime(d) {
+  return d.toTimeString().slice(0,5);
+}
+
 function today() {
   return new Date().toISOString().split('T')[0];
 }
 
 function isMobile() {
   return window.innerWidth < 768;
-}
-
-function formatTime(d) {
-  return d.toTimeString().slice(0,5);
 }
