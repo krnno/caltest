@@ -1,13 +1,6 @@
 // ===== 設定 =====
 const CONFIG = {
-  API_URL: "https://script.google.com/macros/s/AKfycbwDmbS1gNoPLNwKH4oaTVgblGDhArpXY45yeToAJJ5-7eLXeryYhhx7vPdpCR1Xlp7W/exec",
-
-  FORM_URL: "https://docs.google.com/forms/d/e/1FAIpQLScObVveP12M1sgxrOUMGTvADFIltmlkCXci1WGT6StPgmYWdg/viewform",
-
-  FORM_PARAMS: {
-    date: "entry.1234567890",
-    time: "entry.0987654321"
-  }
+  API_URL: "https://script.google.com/macros/s/AKfycbwDmbS1gNoPLNwKH4oaTVgblGDhArpXY45yeToAJJ5-7eLXeryYhhx7vPdpCR1Xlp7W/exec"
 };
 
 // ===== 初期化 =====
@@ -28,7 +21,6 @@ function init() {
     },
 
     height: 'auto',
-
     nowIndicator: true,
 
     validRange: {
@@ -59,7 +51,6 @@ function fetchEvents(info, success, failure) {
     .then(data => {
 
       if (!data.ok) {
-        console.error(data.error);
         failure(data.error);
         return;
       }
@@ -73,30 +64,127 @@ function fetchEvents(info, success, failure) {
 
       success(events);
     })
-    .catch(err => {
-      console.error(err);
-      failure(err);
-    });
+    .catch(failure);
 }
 
 // ===== クリック処理 =====
 function handleEventClick(info) {
 
   const start = new Date(info.event.start);
+  const end   = new Date(info.event.end);
 
   const date = start.toISOString().slice(0,10);
-  const time = start.toTimeString().slice(0,5);
 
-  const url = buildFormUrl(date, time);
-
-  window.open(url, '_blank');
+  openBookingModal(date, start, end);
 }
 
-// ===== フォームURL生成 =====
-function buildFormUrl(date, time) {
-  const p = CONFIG.FORM_PARAMS;
+// ===== モーダル生成 =====
+function openBookingModal(date, openStart, openEnd) {
 
-  return `${CONFIG.FORM_URL}?${p.date}=${encodeURIComponent(date)}&${p.time}=${encodeURIComponent(time)}`;
+  const modal = document.createElement('div');
+  modal.className = 'modal is-active';
+
+  modal.innerHTML = `
+    <div class="modal-background"></div>
+    <div class="modal-card">
+
+      <header class="modal-card-head">
+        <p class="modal-card-title">予約</p>
+        <button class="delete"></button>
+      </header>
+
+      <section class="modal-card-body">
+
+        <div class="field">
+          <label class="label">日付</label>
+          <input class="input" value="${date}" readonly>
+        </div>
+
+        <div class="field">
+          <label class="label">開始時間</label>
+          <div class="select is-fullwidth">
+            <select id="startTime"></select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">利用時間</label>
+          <div class="select is-fullwidth">
+            <select id="duration">
+              <option value="10">10分</option>
+              <option value="20">20分</option>
+              <option value="30">30分</option>
+              <option value="60">60分</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">名前</label>
+          <input id="name" class="input">
+        </div>
+
+        <div class="field">
+          <label class="label">メール</label>
+          <input id="email" class="input">
+        </div>
+
+      </section>
+
+      <footer class="modal-card-foot">
+        <button class="button is-success" id="submitBtn">送信</button>
+        <button class="button cancel">キャンセル</button>
+      </footer>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // ===== 時間候補生成 =====
+  const select = modal.querySelector('#startTime');
+
+  let t = new Date(openStart);
+
+  while (t < openEnd) {
+    const opt = document.createElement('option');
+    opt.value = formatTime(t);
+    opt.textContent = formatTime(t);
+    select.appendChild(opt);
+
+    t = new Date(t.getTime() + 10 * 60000);
+  }
+
+  // ===== 閉じる =====
+  modal.querySelector('.delete').onclick =
+  modal.querySelector('.cancel').onclick =
+  modal.querySelector('.modal-background').onclick = () => modal.remove();
+
+  // ===== 送信 =====
+  modal.querySelector('#submitBtn').onclick = async () => {
+
+    const data = {
+      date,
+      start: modal.querySelector('#startTime').value,
+      duration: modal.querySelector('#duration').value,
+      name: modal.querySelector('#name').value,
+      email: modal.querySelector('#email').value
+    };
+
+    await submitBooking(data);
+
+    modal.remove();
+    alert('送信しました');
+  };
+}
+
+// ===== 送信 =====
+async function submitBooking(data) {
+
+  await fetch(CONFIG.API_URL, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
 }
 
 // ===== ユーティリティ =====
@@ -106,4 +194,8 @@ function today() {
 
 function isMobile() {
   return window.innerWidth < 768;
+}
+
+function formatTime(d) {
+  return d.toTimeString().slice(0,5);
 }
