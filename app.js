@@ -1,6 +1,6 @@
 const CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbwDmbS1gNoPLNwKH4oaTVgblGDhArpXY45yeToAJJ5-7eLXeryYhhx7vPdpCR1Xlp7W/exec",
-  PROVISIONAL_API_URL: "https://script.google.com/macros/s/AKfycbwDmbS1gNoPLNwKH4oaTVgblGDhArpXY45yeToAJJ5-7eLXeryYhhx7vPdpCR1Xlp7W/exec/v1/public/provisional-reservations"
+  PROVISIONAL_API_URL: "https://script.google.com/macros/s/AKfycbxo_e0AXrs-tvOXfEnBYK7Tkfr_k3DGtsEwy4RgYcpvBZodo9RS1PY-NIcrcprXG9XVaA/exec"
 };
 
 document.addEventListener('DOMContentLoaded', init);
