@@ -208,6 +208,13 @@ function openBookingModal(date, openStart, openEnd) {
         </div>
 
         <div class="field">
+          <label class="label">性別</label>
+          <label class="radio"><input type="radio" name="gender" value="MALE" checked> 男</label>
+          <label class="radio"><input type="radio" name="gender" value="FEMALE"> 女</label>
+          <p class="help is-danger">戸籍上の性別を入力してください。</p>
+        </div>
+
+        <div class="field">
           <label class="label">メール</label>
           <input id="customerEmail" type="email" class="input" placeholder="example@example.com">
         </div>
@@ -319,6 +326,9 @@ function openBookingModal(date, openStart, openEnd) {
 
   modal.querySelector('#startTime').addEventListener('change', () => updatePricePreview(modal));
   modal.querySelector('#duration').addEventListener('change', () => updatePricePreview(modal));
+  modal.querySelectorAll('input[name="gender"]').forEach(r => {
+    r.addEventListener('change', () => updatePricePreview(modal));
+  });
 
   modal.querySelector('#submitBtn').onclick = async () => {
     const formPayload = buildBookingPayload(modal, date);
@@ -347,17 +357,19 @@ function openBookingModal(date, openStart, openEnd) {
 
 function buildBookingPayload(modal, date) {
   const type = modal.querySelector('input[name="type"]:checked').value;
+  const gender = modal.querySelector('input[name="gender"]:checked')?.value || '';
   const duration = Number(modal.querySelector('#duration').value);
   return {
     date,
     type,
+    gender,
     name: modal.querySelector('#customerName').value.trim(),
     email: modal.querySelector('#customerEmail').value.trim(),
     start: modal.querySelector('#startTime').value,
     duration,
     meeting: modal.querySelector('#meeting').value.trim(),
     purpose: modal.querySelector('#purpose').value.trim(),
-    estimatedPrice: getPriceEstimate(type, duration).total,
+    estimatedPrice: getPriceEstimate(type, duration, gender).total,
     contactPreference: modal.querySelector('input[name="contactPreference"]:checked')?.value || 'EMAIL'
   };
 }
@@ -372,6 +384,9 @@ function validateBookingPayload(payload) {
     return '利用時間が不正です。';
   }
   if (!payload.type) return '利用形式を選択してください。';
+  if (!payload.gender || !['MALE', 'FEMALE'].includes(payload.gender)) {
+    return '性別を選択してください。';
+  }
   if (payload.type === 'MEET' && !payload.meeting) {
     return '対面の場合は待ち合わせ希望場所を入力してください。';
   }
@@ -503,56 +518,67 @@ function updateEndTime(modal) {
 
 function updatePricePreview(modal) {
   const type = modal.querySelector('input[name="type"]:checked')?.value || 'CALL';
+  const gender = modal.querySelector('input[name="gender"]:checked')?.value || 'MALE';
   const duration = Number(modal.querySelector('#duration')?.value || 0);
   const priceText = modal.querySelector('#priceText');
   const priceDetail = modal.querySelector('#priceDetail');
   if (!priceText || !priceDetail) return;
 
-  const estimate = getPriceEstimate(type, duration);
+  const estimate = getPriceEstimate(type, duration, gender);
   priceText.textContent = `参考価格: ${formatYen(estimate.total)}`;
   priceDetail.textContent = estimate.detail;
 }
 
-function getPriceEstimate(type, durationMinutes) {
+function getPriceEstimate(type, durationMinutes, gender) {
   const minutes = Number.isFinite(durationMinutes) ? durationMinutes : 0;
+  const isFemale = gender === 'FEMALE';
   if (type === 'CALL') {
-    const total = minutes * 200;
+    const unitPrice = isFemale ? 100 : 200;
+    const total = minutes * unitPrice;
     return {
       total,
-      detail: `通話 ${minutes}分 × 200円/分`
+      detail: `通話 ${minutes}分 × ${unitPrice.toLocaleString('ja-JP')}円/分`
     };
   }
 
-  const total = calcMeetPrice(minutes);
+  const total = calcMeetPrice(minutes, isFemale);
   return {
     total,
-    detail: buildMeetPriceDetail(minutes)
+    detail: buildMeetPriceDetail(minutes, isFemale)
   };
 }
 
-function calcMeetPrice(minutes) {
+function calcMeetPrice(minutes, isFemale) {
   if (minutes <= 0) return 0;
   const blocks = Math.ceil(minutes / 60);
-  let total = 15000; // 最初の60分
+  let total = adjustByGender(15000, isFemale); // 最初の60分
   for (let i = 2; i <= blocks; i++) {
-    if (i === 2) total += 10000;
-    else if (i === 3) total += 9000;
-    else total += 8000; // 8000より下げない
+    if (i === 2) total += adjustByGender(10000, isFemale);
+    else if (i === 3) total += adjustByGender(9000, isFemale);
+    else total += adjustByGender(8000, isFemale); // 8000より下げない
   }
   return total;
 }
 
-function buildMeetPriceDetail(minutes) {
+function buildMeetPriceDetail(minutes, isFemale) {
   if (minutes <= 0) return '対面 0分';
   const blocks = Math.ceil(minutes / 60);
-  const parts = ['60分 15,000円'];
+  const parts = [`60分 ${formatAmount(adjustByGender(15000, isFemale))}`];
   for (let i = 2; i <= blocks; i++) {
-    if (i === 2) parts.push('+ 60分 10,000円');
-    else if (i === 3) parts.push('+ 60分 9,000円');
-    else parts.push('+ 60分 8,000円');
+    if (i === 2) parts.push(`+ 60分 ${formatAmount(adjustByGender(10000, isFemale))}`);
+    else if (i === 3) parts.push(`+ 60分 ${formatAmount(adjustByGender(9000, isFemale))}`);
+    else parts.push(`+ 60分 ${formatAmount(adjustByGender(8000, isFemale))}`);
   }
-  parts.push('（当日延長: 30分 4,000円）');
+  parts.push(`（当日延長: 30分 ${formatAmount(adjustByGender(4000, isFemale))}）`);
   return `対面 ${minutes}分: ${parts.join(' ')}`;
+}
+
+function adjustByGender(amount, isFemale) {
+  return isFemale ? amount / 2 : amount;
+}
+
+function formatAmount(amount) {
+  return `${Number(amount).toLocaleString('ja-JP')}円`;
 }
 
 function addOption(select, label, value) {
