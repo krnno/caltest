@@ -40,6 +40,22 @@
       min-width: 180px;
     }
 
+    .modal-card-body .row-date-type-name .field-date,
+    .modal-card-body .row-date-type-name .field-type,
+    .modal-card-body .row-date-type-name .field-name {
+      flex: 1 1 220px;
+    }
+
+    .modal-card-body .row-gender-email .field-gender,
+    .modal-card-body .row-gender-email .field-email {
+      flex: 1 1 260px;
+    }
+
+    .modal-card-body .row-time .field {
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+
     @media (max-width:768px){
       .fc-toolbar-title { font-size:1rem; }
       .modal-card .select select,
@@ -49,6 +65,19 @@
       }
       .modal-card-body .field-row .field {
         min-width: 100%;
+      }
+      .modal-card-body .row-date-type-name .field-date,
+      .modal-card-body .row-date-type-name .field-type {
+        min-width: 0;
+        flex: 1 1 0;
+      }
+      .modal-card-body .row-date-type-name .field-name {
+        min-width: 100%;
+        flex: 1 1 100%;
+      }
+      .modal-card-body .row-time .field {
+        min-width: 0;
+        flex: 1 1 0;
       }
     }
   </style>
