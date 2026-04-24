@@ -401,10 +401,14 @@ function validateBookingPayload(payload) {
 }
 
 async function postProvisionalReservation(payload) {
+  const body = new URLSearchParams();
+  Object.entries(payload).forEach(([key, value]) => {
+    body.append(key, value === undefined || value === null ? '' : String(value));
+  });
+
   const res = await fetch(CONFIG.PROVISIONAL_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body
   });
 
   if (!res.ok) {
