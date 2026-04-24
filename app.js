@@ -191,32 +191,36 @@ function openBookingModal(date, openStart, openEnd) {
 
       <section class="modal-card-body">
 
-        <div class="field">
-          <label class="label">日付</label>
-          <input class="input" value="${date}" readonly>
+        <div class="field-row row-date-type-name">
+          <div class="field field-date">
+            <label class="label">日付</label>
+            <input class="input" value="${date}" readonly>
+          </div>
+
+          <div class="field field-type">
+            <label class="label">利用形式</label>
+            <label class="radio"><input type="radio" name="type" value="CALL" checked> 通話</label>
+            <label class="radio"><input type="radio" name="type" value="MEET"> 対面</label>
+          </div>
+
+          <div class="field field-name">
+            <label class="label">名前</label>
+            <input id="customerName" class="input" placeholder="お名前">
+          </div>
         </div>
 
-        <div class="field">
-          <label class="label">利用形式</label>
-          <label class="radio"><input type="radio" name="type" value="CALL" checked> 通話</label>
-          <label class="radio"><input type="radio" name="type" value="MEET"> 対面</label>
-        </div>
+        <div class="field-row row-gender-email">
+          <div class="field field-gender">
+            <label class="label">性別</label>
+            <label class="radio"><input type="radio" name="gender" value="MALE" checked> 男</label>
+            <label class="radio"><input type="radio" name="gender" value="FEMALE"> 女</label>
+            <p class="help is-danger">戸籍上の性別を入力してください。</p>
+          </div>
 
-        <div class="field">
-          <label class="label">名前</label>
-          <input id="customerName" class="input" placeholder="お名前">
-        </div>
-
-        <div class="field">
-          <label class="label">性別</label>
-          <label class="radio"><input type="radio" name="gender" value="MALE" checked> 男</label>
-          <label class="radio"><input type="radio" name="gender" value="FEMALE"> 女</label>
-          <p class="help is-danger">戸籍上の性別を入力してください。</p>
-        </div>
-
-        <div class="field">
-          <label class="label">メール</label>
-          <input id="customerEmail" type="email" class="input" placeholder="example@example.com">
+          <div class="field field-email">
+            <label class="label">メール</label>
+            <input id="customerEmail" type="email" class="input" placeholder="example@example.com">
+          </div>
         </div>
 
         <div class="field">
@@ -225,7 +229,7 @@ function openBookingModal(date, openStart, openEnd) {
           <label class="radio"><input type="radio" name="contactPreference" value="LINE_PREFERRED"> LINE希望（未連携時はメール）</label>
         </div>
 
-        <div class="field-row">
+        <div class="field-row row-time">
           <div class="field">
             <label class="label">開始時間</label>
             <div class="select is-fullwidth">
